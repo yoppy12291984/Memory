@@ -229,6 +229,18 @@ table.rec .cS.ai{color:var(--ok)}
   stroke-linecap:round;stroke-linejoin:round}
 .pager .n{font-family:var(--mono);font-size:11.5px;color:var(--faint);letter-spacing:.14em;min-width:76px;
   text-align:center}
+/* ══ Treasure ══ */
+.star{display:inline-flex;align-items:center;gap:5px;color:var(--faint);transition:color .15s}
+.star svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.5;
+  stroke-linejoin:round}
+.star:hover{color:var(--accent)}
+.star.on{color:var(--accent)}
+.star.on svg{fill:currentColor}
+.bookbar{display:flex;align-items:center;gap:12px;margin:2px 0 16px;flex-wrap:wrap}
+.bookbar .seg button{font-size:12px;padding:5px 13px}
+.bookbar .hint{font-family:var(--mono);font-size:10.5px;color:var(--faint);letter-spacing:.08em}
+.leaf .lmark{position:absolute;top:24px;right:24px;color:var(--accent)}
+.leaf .lmark svg{width:17px;height:17px;fill:currentColor;stroke:none}
 .blank{text-align:center;padding:70px 24px;color:var(--sub)}
 .blank b{display:block;font-family:var(--mincho);font-size:20px;color:var(--ink);margin-bottom:10px;font-weight:600}
 .blank span{font-size:13.5px}
@@ -391,9 +403,12 @@ table.rec .cS.ai{color:var(--ok)}
   <label class="f"><span>本文</span><textarea id="fBody" placeholder="その日のこと、話したこと、味、天気。"></textarea></label>
   <div class="f"><span>写真</span><div class="tiles" id="tiles"></div>
     <input type="file" id="fFiles" accept="image/*" multiple hidden></div>
-  <div class="act">
-    <button class="b danger" id="edDel" hidden>削除</button>
-    <button class="b solid" id="edSave">保存する</button>
+  <div class="act" style="justify-content:space-between">
+    <button class="b line" id="edStar">☆ Treasure にする</button>
+    <span style="display:flex;gap:10px">
+      <button class="b danger" id="edDel" hidden>削除</button>
+      <button class="b solid" id="edSave">保存する</button>
+    </span>
   </div>
 </section>
 
@@ -425,6 +440,10 @@ table.rec .cS.ai{color:var(--ok)}
   <hr style="border:none;border-top:1px solid var(--line);margin:26px 0 20px">
   <p class="note" style="margin-bottom:14px">今 表示している範囲を、写真つきの冊子の体裁に組んで印刷します。
     アルバムを開いてから実行すると、その旅行だけの一冊になります。</p>
+  <label style="display:flex;align-items:center;gap:9px;font-size:13px;color:var(--sub);margin-bottom:14px">
+    <input type="checkbox" id="prStar" style="width:17px;height:17px;accent-color:var(--ok)">
+    Treasure だけで組む
+  </label>
   <div class="act" style="justify-content:flex-start">
     <button class="b line" id="printBtn">冊子として印刷する</button>
   </div>
@@ -449,7 +468,7 @@ const LS={url:'mos.url',entries:'mos.entries',theme:'mos.theme'};
 const S={url:localStorage.getItem(LS.url)||'',
   entries:JSON.parse(localStorage.getItem(LS.entries)||'[]'),
   view:'table',query:'',album:null,editing:null,draft:[],staged:[],
-  sort:{k:'date',d:-1},cal:null,page:0};
+  sort:{k:'date',d:-1},cal:null,page:0,onlyStar:true};
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
@@ -512,6 +531,20 @@ function hydrate(scope=document){
 }
 
 const D=d=>new Date(d+'T00:00');
+const STAR_SVG='<svg viewBox="0 0 24 24"><path d="M12 3.2l2.6 5.7 6.2.7-4.6 4.2 1.3 6.1L12 16.8 6.5 19.9l1.3-6.1L3.2 9.6l6.2-.7z"/></svg>';
+function starBtn(e){
+  return `<button class="star ${e.star?'on':''}" data-star="${e.id}"
+    aria-label="${e.star?'Treasure を外す':'Treasure にする'}">${STAR_SVG}</button>`;
+}
+async function toggleStar(id){
+  const e=S.entries.find(x=>x.id===id); if(!e) return;
+  const next={...e,star:!e.star,updatedAt:new Date().toISOString()};
+  try{
+    await api('save',{entry:next});
+    Object.assign(e,next); store(); render();
+    toast(next.star?'Treasure にしました':'Treasure を外しました');
+  }catch(err){ toast('変更できませんでした：'+err.message); }
+}
 function shiftMonth(ym,n){
   const [y,m]=ym.split('-').map(Number);
   const d=new Date(y,m-1+n,1);
@@ -553,7 +586,7 @@ function timeline(){
       <div class="pane">
         ${shots(e)}
         <div class="txt"><h3>${esc(e.title)||'無題'}</h3>${e.body?`<p>${esc(e.body)}</p>`:''}</div>
-        <div class="tools"><button data-edit="${e.id}">編集</button>
+        <div class="tools">${starBtn(e)}<button data-edit="${e.id}">編集</button>
           ${e.photos?.length?`<span>${e.photos.length} 枚</span>`
             :`<button class="want" data-edit="${e.id}">写真を足す</button>`}</div>
       </div></article>`;
@@ -577,6 +610,7 @@ function albums(){
       <h4>${esc(n)}</h4><p>${a.first.replace(/-/g,'.')} — ${a.last.replace(/-/g,'.')}</p></button>`).join('')+'</div>';
 }
 const COLS=[
+  {k:'star',  label:'TREASURE'},
   {k:'date',  label:'日付'},
   {k:'title', label:'タイトル'},
   {k:'album', label:'旅行名'},
@@ -588,6 +622,7 @@ function sortRows(list){
   return [...list].sort((a,b)=>{
     let x,y;
     if(k==='photos'){x=(a.photos||[]).length;y=(b.photos||[]).length;}
+    else if(k==='star'){x=a.star?1:0;y=b.star?1:0;}
     else{x=String(a[k]||'');y=String(b[k]||'');}
     if(x<y)return -1*d; if(x>y)return 1*d;
     return (b.date+b.id).localeCompare(a.date+a.id);
@@ -603,6 +638,7 @@ function table(){
     return `<th data-sort="${c.k}" class="${on?'on':''}">${c.label}
       <span class="ar">${on?(S.sort.d===1?'▲':'▼'):'▼'}</span></th>`;}).join('');
   const rows=list.map(e=>`<tr data-edit="${e.id}">
+    <td>${starBtn(e)}</td>
     <td class="cD">${e.date.replace(/-/g,'.')}<br>${'日月火水木金土'[D(e.date).getDay()]}</td>
     <td class="cT">${esc(e.title)||'無題'}${e.body?`<small>${esc(e.body.replace(/\n/g,' '))}</small>`:''}</td>
     <td class="cA">${esc(e.album)||'<span style="color:var(--faint)">—</span>'}</td>
@@ -615,8 +651,8 @@ function table(){
 }
 function toCsv(){
   const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
-  const rows=[['日付','タイトル','旅行名','本文','写真枚数','出どころ']]
-    .concat(sortRows(visible()).map(e=>[e.date,e.title,e.album,e.body,
+  const rows=[['Treasure','日付','タイトル','旅行名','本文','写真枚数','出どころ']]
+    .concat(sortRows(visible()).map(e=>[e.star?'★':'',e.date,e.title,e.album,e.body,
       (e.photos||[]).length, e.source==='ai'?'AI':'自分']));
   const blob=new Blob(['\uFEFF'+rows.map(r=>r.map(q).join(',')).join('\r\n')],
     {type:'text/csv;charset=utf-8'});
@@ -666,13 +702,30 @@ function calendar(){
 }
 
 /* ══ ノート（めくり） ══ */
+function bookList(){
+  return [...visible()].filter(e=>!S.onlyStar||e.star)
+    .sort((a,b)=>(b.date+b.id).localeCompare(a.date+a.id));
+}
+function bookBar(){
+  const starred=visible().filter(e=>e.star).length;
+  return `<div class="bookbar">
+    <div class="seg">
+      <button data-only="1" aria-selected="${S.onlyStar}">Treasure だけ</button>
+      <button data-only="0" aria-selected="${!S.onlyStar}">すべて</button>
+    </div>
+    <span class="hint">TREASURE ${starred}</span></div>`;
+}
 function bookview(){
-  const list=[...visible()].sort((a,b)=>(b.date+b.id).localeCompare(a.date+a.id));
-  if(!list.length) return `<div class="blank"><b>めくるページがありません</b>
-    <span>記録を足すと、ここが一冊になります。</span></div>`;
+  const list=bookList();
+  if(!list.length) return bookBar()+(S.onlyStar
+    ? `<div class="blank"><b>Treasure がまだありません</b>
+       <span>一覧表やタイムラインの ★ を押すと、この一冊に綴じられます。</span></div>`
+    : `<div class="blank"><b>めくるページがありません</b>
+       <span>記録を足すと、ここが一冊になります。</span></div>`);
   S.page=Math.max(0,Math.min(S.page,list.length-1));
   const e=list[S.page], ph=(e.photos||[]).slice(0,6);
-  return `<div class="bookstage"><article class="leaf" id="leaf">
+  return bookBar()+`<div class="bookstage"><article class="leaf" id="leaf">
+      ${e.star?`<span class="lmark">${STAR_SVG}</span>`:''}
       <div class="lmon">${e.date.slice(0,4)} / ${e.date.slice(5,7)}${e.album?'　'+esc(e.album):''}</div>
       <div class="lday"><b>${D(e.date).getDate()}</b>
         <span>${'日月火水木金土'[D(e.date).getDay()]}曜${e.source==='ai'?'　AI':''}</span></div>
@@ -681,7 +734,8 @@ function bookview(){
       ${ph.length?`<div class="lpic q${ph.length}">`+ph.map((p,i)=>
         `<div data-open="${e.id}" data-i="${i}"><img data-pid="${p}" alt=""></div>`).join('')+`</div>`:''}
       <div class="lfoot"><span>${S.page+1} / ${list.length}</span>
-        <button data-edit="${e.id}">編集</button></div>
+        <button data-edit="${e.id}">編集</button>
+        ${starBtn(e)}</div>
     </article></div>
     <div class="pager">
       <button id="pPrev" ${S.page===0?'disabled':''} aria-label="前のページ">
@@ -694,7 +748,7 @@ function bookview(){
 let flipping=false;
 function flip(dir){
   if(flipping) return;
-  const total=visible().length, next=S.page+dir;
+  const total=bookList().length, next=S.page+dir;
   if(next<0||next>=total) return;
   const leaf=$('#leaf');
   if(!leaf){ S.page=next; render(); return; }
@@ -748,16 +802,21 @@ function render(){
     .map(a=>`<option value="${esc(a)}">`).join('');
 }
 $('#main').addEventListener('click',ev=>{
+  const st=ev.target.closest('[data-star]');
+  if(st){ ev.stopPropagation(); return toggleStar(st.dataset.star); }
+  const only=ev.target.closest('[data-only]');
+  if(only){ S.onlyStar=only.dataset.only==='1'; S.page=0; render(); return; }
   const ed=ev.target.closest('[data-edit]'); if(ed) return openEditor(S.entries.find(e=>e.id===ed.dataset.edit));
   const al=ev.target.closest('[data-album]');
   if(al){S.album=al.dataset.album;S.view='timeline';render();scrollTo({top:0});return;}
   if(ev.target.id==='back'){S.album=null;S.view='albums';render();return;}
   const day=ev.target.closest('[data-day]');
   if(day){
-    const list=visible();
-    const i=[...list].sort((a,b)=>(b.date+b.id).localeCompare(a.date+a.id))
-      .findIndex(e=>e.date===day.dataset.day);
-    if(i>=0){S.page=i;S.view='book';render();scrollTo({top:0});}
+    const d=day.dataset.day;
+    if(S.onlyStar && !visible().some(e=>e.date===d&&e.star)) S.onlyStar=false;
+    S.view='book';
+    const i=bookList().findIndex(e=>e.date===d);
+    if(i>=0){S.page=i;render();scrollTo({top:0});}
     return;
   }
   const sh=ev.target.closest('[data-open]');
@@ -777,8 +836,16 @@ function openEditor(entry){
   $('#fDate').value=entry?.date||new Date().toISOString().slice(0,10);
   $('#fTitle').value=entry?.title||''; $('#fAlbum').value=entry?.album||S.album||'';
   $('#fBody').value=entry?.body||''; $('#edDel').hidden=!entry;
+  S.draftStar=!!entry?.star; paintStar();
   tiles(); open($('#editor'));
 }
+function paintStar(){
+  const b=$('#edStar');
+  b.textContent=S.draftStar?'★ Treasure':'☆ Treasure にする';
+  b.style.color=S.draftStar?'var(--accent)':'';
+  b.style.borderColor=S.draftStar?'var(--accent)':'';
+}
+$('#edStar').onclick=()=>{S.draftStar=!S.draftStar;paintStar();};
 function tiles(){
   $('#tiles').innerHTML=S.draft.map((p,i)=>`<div class="tile"><img data-pid="${p}" class="on" alt="">
     <button data-rm="${i}" aria-label="この写真を外す">✕</button></div>`).join('')
@@ -802,7 +869,8 @@ $('#fFiles').onchange=async ev=>{
 $('#edSave').onclick=async()=>{
   const e={id:S.editing?.id||uid(),date:$('#fDate').value||new Date().toISOString().slice(0,10),
     title:$('#fTitle').value.trim(),album:$('#fAlbum').value.trim(),body:$('#fBody').value,
-    photos:[...S.draft],source:S.editing?.source||'me',updatedAt:new Date().toISOString()};
+    photos:[...S.draft],source:S.editing?.source||'me',star:!!S.draftStar,
+    updatedAt:new Date().toISOString()};
   if(!e.title&&!e.body&&!e.photos.length) return toast('タイトルか本文、写真のどれかを入れてください');
   $('#edSave').disabled=true;
   try{await api('save',{entry:e});
@@ -928,14 +996,16 @@ addEventListener('keydown',ev=>{
 });
 
 /* ══ version ══ */
-const APP_VER='1.4.0';
+const APP_VER='1.6.0';
 $('#ver').textContent='v'+APP_VER;
 $('#verNote').textContent='Memory OS  v'+APP_VER;
 
 /* ══ 冊子 ══ */
 $('#printBtn').onclick=async()=>{
-  const list=[...visible()].sort((a,b)=>(a.date+a.id).localeCompare(b.date+b.id));
-  if(!list.length) return toast('印刷できる記録がありません');
+  const onlyStar=$('#prStar').checked;
+  const list=[...visible()].filter(e=>!onlyStar||e.star)
+    .sort((a,b)=>(a.date+a.id).localeCompare(b.date+b.id));
+  if(!list.length) return toast(onlyStar?'Treasure がありません':'印刷できる記録がありません');
   const btn=$('#printBtn'); btn.disabled=true;
   const ids=[...new Set(list.flatMap(e=>e.photos||[]))];
   toast(ids.length?`写真 ${ids.length} 枚を読み込んでいます`:'組版しています');
@@ -947,7 +1017,7 @@ $('#printBtn').onclick=async()=>{
     ? list[0].date.replace(/-/g,'.')+' — '+list[list.length-1].date.replace(/-/g,'.')
     : list[0].date.replace(/-/g,'.');
   let h=`<div class="bk-cover"><h1>${esc(title)}</h1>
-    <p>${span}</p><p>${list.length} 件の記録</p></div>`;
+    <p>${span}</p><p>${list.length} 件の記録${onlyStar?'　TREASURES':''}</p></div>`;
   let ym=null;
   for(const e of list){
     const k=e.date.slice(0,7);
