@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="utf-8">
@@ -262,14 +262,25 @@ table.rec .cS.ai{color:var(--ok)}
 .veil{position:fixed;inset:0;background:rgba(12,14,16,.4);backdrop-filter:blur(3px);z-index:50;
   opacity:0;pointer-events:none;transition:opacity .26s}
 .veil.on{opacity:1;pointer-events:auto}
-.sheet{position:fixed;left:0;right:0;bottom:0;max-height:93vh;overflow:auto;background:var(--bg);
-  border-radius:22px 22px 0 0;z-index:60;padding:8px 20px calc(28px + env(safe-area-inset-bottom));
+.sheet{position:fixed;left:0;right:0;bottom:0;overflow:auto;background:var(--bg);
+  max-height:min(93vh, calc(100dvh - env(safe-area-inset-top) - 14px));
+  border-radius:22px 22px 0 0;z-index:60;padding:0 20px calc(28px + env(safe-area-inset-bottom));
   transform:translateY(101%);transition:transform .32s cubic-bezier(.22,.9,.24,1);
-  box-shadow:0 -12px 50px -18px rgba(0,0,0,.4)}
+  box-shadow:0 -12px 50px -18px rgba(0,0,0,.4);overscroll-behavior:contain}
+.sheet.dragging{transition:none}
 .sheet.on{transform:translateY(0)}
 @media(min-width:700px){.sheet{max-width:620px;margin:0 auto;border-radius:20px;bottom:26px;left:20px;right:20px}}
-.grab{width:36px;height:4px;border-radius:99px;background:var(--line);margin:0 auto 14px}
-.shead{display:flex;align-items:center;gap:10px;margin-bottom:18px}
+.grab{display:block;width:100%;padding:11px 0 9px;background:none;border:none;cursor:grab;
+  touch-action:none}
+.grab::before{content:"";display:block;width:44px;height:5px;border-radius:99px;background:var(--line);
+  margin:0 auto;transition:background .15s,width .15s}
+.grab:hover::before{background:var(--sub);width:56px}
+.sheethead{position:sticky;top:0;z-index:5;background:var(--bg);margin:0 -20px;padding:0 20px;
+  padding-top:env(safe-area-inset-top)}
+.shead{display:flex;align-items:center;gap:10px;padding-bottom:16px}
+.shead .ico{width:44px;height:44px;border-radius:14px;background:var(--hair);color:var(--ink)}
+.shead .ico svg{width:19px;height:19px}
+.shead .ico:hover{background:var(--line)}
 .shead h2{font-family:var(--mincho);font-size:18px;margin:0;font-weight:600;letter-spacing:.06em}
 .note{color:var(--sub);font-size:13px;line-height:1.85;margin:0 0 18px}
 
@@ -392,9 +403,11 @@ table.rec .cS.ai{color:var(--ok)}
 <div class="veil" id="veil"></div>
 
 <section class="sheet" id="editor" role="dialog" aria-modal="true" aria-labelledby="edT">
-  <div class="grab"></div>
-  <div class="shead"><h2 id="edT">記録を書く</h2><div class="grow"></div>
+  <div class="sheethead">
+    <button class="grab" data-close aria-label="閉じる"></button>
+    <div class="shead"><h2 id="edT">記録を書く</h2><div class="grow"></div>
     <button class="ico" id="edX" aria-label="閉じる"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
+  </div>
   <div class="two">
     <label class="f"><span>日付</span><input type="date" id="fDate"></label>
     <label class="f"><span>旅行名（空欄なら日常）</span><input id="fAlbum" list="albumList" placeholder="神戸旅行 2026夏">
@@ -414,9 +427,11 @@ table.rec .cS.ai{color:var(--ok)}
 </section>
 
 <section class="sheet" id="importSheet" role="dialog" aria-modal="true" aria-labelledby="imT">
-  <div class="grab"></div>
-  <div class="shead"><h2 id="imT">AIから取り込む</h2><div class="grow"></div>
+  <div class="sheethead">
+    <button class="grab" data-close aria-label="閉じる"></button>
+    <div class="shead"><h2 id="imT">AIから取り込む</h2><div class="grow"></div>
     <button class="ico" id="imX" aria-label="閉じる"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
+  </div>
   <p class="note">専用プロジェクトで話した内容を日記にしてもらい、返ってきた JSON をそのまま貼ってください。写真は取り込んだあと、各記録から足せます。</p>
   <div class="act" style="justify-content:flex-start;margin:0 0 16px">
     <button class="b line" id="copyPrompt">プロジェクト用の指示をコピー</button>
@@ -428,9 +443,11 @@ table.rec .cS.ai{color:var(--ok)}
 </section>
 
 <section class="sheet" id="setupSheet" role="dialog" aria-modal="true" aria-labelledby="stT">
-  <div class="grab"></div>
-  <div class="shead"><h2 id="stT">接続設定</h2><div class="grow"></div>
+  <div class="sheethead">
+    <button class="grab" data-close aria-label="閉じる"></button>
+    <div class="shead"><h2 id="stT">接続設定</h2><div class="grow"></div>
     <button class="ico" id="stX" aria-label="閉じる"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
+  </div>
   <label class="f"><span>GAS ウェブアプリの URL</span>
     <input id="fUrl" placeholder="https://script.google.com/macros/s/..../exec"></label>
   <p class="note">写真は Google Drive の「Memory OS 写真」フォルダに、本文はスプレッドシートに保存されます。読み込んだ写真は端末内にも控えるので、2回目からは通信なしで開きます。</p>
@@ -826,10 +843,37 @@ $('#main').addEventListener('click',ev=>{
 document.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>{S.view=b.dataset.view;S.album=null;render();});
 
 function open(el){el.classList.add('on');$('#veil').classList.add('on');}
-function closeAll(){document.querySelectorAll('.sheet').forEach(s=>s.classList.remove('on'));
+function closeAll(){document.querySelectorAll('.sheet').forEach(s=>{
+    s.classList.remove('on','dragging'); s.style.transform='';});
   $('#veil').classList.remove('on');S.editing=null;S.draft=[];}
 $('#veil').onclick=closeAll;
 $('#edX').onclick=$('#imX').onclick=$('#stX').onclick=closeAll;
+
+/* つまみ：タップでも、下に払っても閉じる */
+document.querySelectorAll('.grab').forEach(g=>{
+  const sheet=g.closest('.sheet');
+  let y0=null,moved=0,t0=0;
+  const begin=y=>{y0=y;moved=0;t0=Date.now();sheet.classList.add('dragging');};
+  const move=y=>{
+    if(y0===null)return;
+    moved=Math.max(0,y-y0);
+    sheet.style.transform='translateY('+moved+'px)';
+  };
+  const end=()=>{
+    if(y0===null)return;
+    sheet.classList.remove('dragging');
+    sheet.style.transform='';
+    const quick=Date.now()-t0<260&&moved>34;
+    if(moved>96||quick) closeAll();
+    else if(moved<6) closeAll();     // ほぼ動いていなければタップとみなす
+    y0=null;
+  };
+  g.addEventListener('touchstart',e=>begin(e.touches[0].clientY),{passive:true});
+  g.addEventListener('touchmove',e=>{move(e.touches[0].clientY);e.preventDefault();},{passive:false});
+  g.addEventListener('touchend',end);
+  g.addEventListener('touchcancel',end);
+  g.addEventListener('click',ev=>{ if(y0===null&&moved===0) closeAll(); });
+});
 
 function openEditor(entry){
   S.editing=entry||null; S.draft=entry?[...(entry.photos||[])]:[];
@@ -997,7 +1041,7 @@ addEventListener('keydown',ev=>{
 });
 
 /* ══ version ══ */
-const APP_VER='1.6.1';
+const APP_VER='1.7.0';
 $('#ver').textContent='v'+APP_VER;
 $('#verNote').textContent='Memory OS  v'+APP_VER;
 
