@@ -127,6 +127,7 @@ button{cursor:pointer;background:none;border:none;padding:0}
 
 .tblwrap{background:var(--paper);border-radius:var(--r);box-shadow:var(--lift);overflow-x:auto}
 table.rec{width:100%;border-collapse:collapse;font-size:13.5px;min-width:560px}
+table.rec th.cst,table.rec td.cst{width:34px;padding-left:12px;padding-right:0;text-align:center}
 table.rec th{position:sticky;top:0;background:var(--paper);text-align:left;font-weight:500;
   font-size:11px;letter-spacing:.12em;color:var(--faint);padding:13px 14px;white-space:nowrap;
   border-bottom:1px solid var(--line);cursor:pointer;transition:color .15s;z-index:1}
@@ -610,7 +611,7 @@ function albums(){
       <h4>${esc(n)}</h4><p>${a.first.replace(/-/g,'.')} — ${a.last.replace(/-/g,'.')}</p></button>`).join('')+'</div>';
 }
 const COLS=[
-  {k:'star',  label:'TREASURE'},
+  {k:'star',  label:'★'},
   {k:'date',  label:'日付'},
   {k:'title', label:'タイトル'},
   {k:'album', label:'旅行名'},
@@ -635,10 +636,10 @@ function table(){
   if(!list.length) return `<div class="blank"><b>見つかりません</b><span>条件に合う記録がありませんでした。</span></div>`;
   const head=COLS.map(c=>{
     const on=S.sort.k===c.k;
-    return `<th data-sort="${c.k}" class="${on?'on':''}">${c.label}
-      <span class="ar">${on?(S.sort.d===1?'▲':'▼'):'▼'}</span></th>`;}).join('');
+    return `<th data-sort="${c.k}" class="${on?'on':''} ${c.k==='star'?'cst':''}">${c.label}${
+      c.k==='star'?'':`<span class="ar">${on?(S.sort.d===1?'▲':'▼'):'▼'}</span>`}</th>`;}).join('');
   const rows=list.map(e=>`<tr data-edit="${e.id}">
-    <td>${starBtn(e)}</td>
+    <td class="cst">${starBtn(e)}</td>
     <td class="cD">${e.date.replace(/-/g,'.')}<br>${'日月火水木金土'[D(e.date).getDay()]}</td>
     <td class="cT">${esc(e.title)||'無題'}${e.body?`<small>${esc(e.body.replace(/\n/g,' '))}</small>`:''}</td>
     <td class="cA">${esc(e.album)||'<span style="color:var(--faint)">—</span>'}</td>
@@ -996,7 +997,7 @@ addEventListener('keydown',ev=>{
 });
 
 /* ══ version ══ */
-const APP_VER='1.6.0';
+const APP_VER='1.6.1';
 $('#ver').textContent='v'+APP_VER;
 $('#verNote').textContent='Memory OS  v'+APP_VER;
 
