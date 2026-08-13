@@ -42,6 +42,8 @@ button{cursor:pointer;background:none;border:none;padding:0}
 .top-in{max-width:760px;margin:0 auto;padding:16px 20px 10px;display:flex;align-items:center;gap:11px}
 .mark{width:25px;height:25px;flex:none;border-radius:6.5px;box-shadow:0 1px 4px rgba(26,29,33,.16)}
 .brand{font-family:var(--mincho);font-size:17px;font-weight:600;letter-spacing:.16em;margin:0}
+.ver{font-family:var(--mono);font-size:10px;color:var(--faint);letter-spacing:.08em;
+  border:1px solid var(--line);border-radius:99px;padding:1px 7px;line-height:1.6;align-self:center}
 .grow{flex:1}
 .ico{width:32px;height:32px;display:grid;place-items:center;border-radius:9px;color:var(--sub);
   transition:background .15s,color .15s}
@@ -50,7 +52,9 @@ button{cursor:pointer;background:none;border:none;padding:0}
   stroke-linecap:round;stroke-linejoin:round}
 
 .segwrap{max-width:760px;margin:0 auto;padding:0 20px 14px;display:flex;align-items:center;gap:12px}
-.seg{display:inline-flex;background:var(--hair);border-radius:11px;padding:3px}
+.segwrap{overflow-x:auto;scrollbar-width:none}
+.segwrap::-webkit-scrollbar{display:none}
+.seg{display:inline-flex;background:var(--hair);border-radius:11px;padding:3px;flex:none}
 .seg button{padding:5px 15px;border-radius:8px;font-size:12.5px;letter-spacing:.08em;color:var(--sub);
   transition:.18s}
 .seg button[aria-selected="true"]{background:var(--paper);color:var(--ink);
@@ -147,6 +151,84 @@ table.rec .cS.ai{color:var(--ok)}
   font-family:var(--mono);letter-spacing:.06em}
 .tblfoot button{color:var(--sub);text-decoration:underline;text-underline-offset:3px}
 .tblfoot button:hover{color:var(--ink)}
+/* ══ カレンダー ══ */
+.calbar{display:flex;align-items:center;gap:14px;margin:2px 0 20px}
+.calbar h2{font-family:var(--mincho);font-size:21px;font-weight:600;margin:0;letter-spacing:.06em;
+  min-width:150px}
+.calbar button{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;color:var(--sub);
+  border:1px solid var(--line);transition:.15s}
+.calbar button:hover{border-color:var(--ink);color:var(--ink)}
+.calbar svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;
+  stroke-linecap:round;stroke-linejoin:round}
+.calbar .today{width:auto;padding:0 13px;font-size:12px;letter-spacing:.08em}
+.wk{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:7px}
+.wk span{text-align:center;font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--faint)}
+.wk span.s6{color:var(--ok)}
+.wk span.s0{color:var(--accent)}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.cell{position:relative;aspect-ratio:1/1;border-radius:11px;background:var(--paper);overflow:hidden;
+  box-shadow:0 1px 1px rgba(26,29,33,.04);transition:transform .13s}
+.cell.void{background:transparent;box-shadow:none}
+.cell.has{cursor:pointer}
+.cell.has:hover{transform:scale(1.04)}
+.cell img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .5s}
+.cell img.on{opacity:1}
+.cell b{position:absolute;top:5px;left:7px;z-index:2;font-family:var(--mono);font-size:11px;
+  font-weight:500;color:var(--sub);letter-spacing:.03em}
+.cell.shot b{color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.cell.now{outline:1.5px solid var(--accent);outline-offset:-1.5px}
+.cell.now b{color:var(--accent)}
+.cell.shot.now b{color:#fff}
+.cell .dot{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);width:5px;height:5px;
+  border-radius:50%;background:var(--accent);z-index:2}
+.cell .ttl{position:absolute;left:0;right:0;bottom:0;padding:14px 5px 4px;z-index:2;
+  font-size:9.5px;line-height:1.3;color:var(--sub);overflow:hidden;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.cell.shot .ttl{color:#fff;background:linear-gradient(transparent,rgba(16,19,21,.7))}
+.calsum{margin-top:18px;font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.06em}
+
+/* ══ ノート（めくり） ══ */
+.bookstage{perspective:2200px;margin:2px 0 18px}
+.leaf{position:relative;background:var(--paper);border-radius:6px 16px 16px 6px;
+  box-shadow:var(--lift),inset 7px 0 14px -12px rgba(26,29,33,.5);
+  min-height:62vh;padding:26px 26px 54px 30px;overflow:hidden;
+  transform-origin:left center;backface-visibility:hidden}
+.leaf::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:linear-gradient(var(--line),color-mix(in srgb,var(--line) 40%,transparent))}
+.leaf.turn-f{animation:tf .42s cubic-bezier(.4,.05,.35,1)}
+.leaf.turn-b{animation:tb .42s cubic-bezier(.4,.05,.35,1)}
+@keyframes tf{from{transform:rotateY(0);opacity:1}60%{opacity:.5}to{transform:rotateY(-32deg);opacity:0}}
+@keyframes tb{from{transform:rotateY(28deg);opacity:0}to{transform:rotateY(0);opacity:1}}
+.leaf .lmon{font-family:var(--mono);font-size:10px;letter-spacing:.24em;color:var(--faint);
+  margin-bottom:14px}
+.leaf .lday{display:flex;align-items:baseline;gap:9px;margin-bottom:12px;flex-wrap:wrap}
+.leaf .lday b{font-family:var(--mincho);font-size:38px;line-height:1;font-weight:600}
+.leaf .lday span{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.12em}
+.leaf h3{font-family:var(--mincho);font-size:22px;font-weight:600;margin:0 0 10px;line-height:1.55}
+.leaf p{white-space:pre-wrap;margin:0;font-size:14.5px;line-height:2}
+.leaf .lpic{display:grid;gap:4px;margin-top:16px}
+.leaf .lpic.q1{grid-template-columns:1fr}
+.leaf .lpic.q2,.leaf .lpic.q4{grid-template-columns:1fr 1fr}
+.leaf .lpic.q3,.leaf .lpic.q5,.leaf .lpic.q6{grid-template-columns:repeat(3,1fr)}
+.leaf .lpic div{position:relative;aspect-ratio:1/1;border-radius:7px;overflow:hidden;background:var(--hair);
+  cursor:pointer}
+.leaf .lpic.q1 div{aspect-ratio:3/2}
+.leaf .lpic img{width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .5s}
+.leaf .lpic img.on{opacity:1}
+.leaf .lfoot{position:absolute;left:30px;right:26px;bottom:18px;display:flex;align-items:center;gap:14px;
+  font-family:var(--mono);font-size:10.5px;color:var(--faint);letter-spacing:.1em;
+  border-top:1px solid var(--hair);padding-top:11px}
+.leaf .lfoot button{color:var(--sub);text-decoration:underline;text-underline-offset:3px}
+.leaf .lfoot button:hover{color:var(--ink)}
+.pager{display:flex;align-items:center;justify-content:center;gap:16px}
+.pager button{width:42px;height:42px;border-radius:50%;border:1px solid var(--line);display:grid;
+  place-items:center;color:var(--sub);transition:.15s}
+.pager button:hover:not(:disabled){border-color:var(--ink);color:var(--ink)}
+.pager button:disabled{opacity:.3;cursor:default}
+.pager svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;
+  stroke-linecap:round;stroke-linejoin:round}
+.pager .n{font-family:var(--mono);font-size:11.5px;color:var(--faint);letter-spacing:.14em;min-width:76px;
+  text-align:center}
 .blank{text-align:center;padding:70px 24px;color:var(--sub)}
 .blank b{display:block;font-family:var(--mincho);font-size:20px;color:var(--ink);margin-bottom:10px;font-weight:600}
 .blank span{font-size:13.5px}
@@ -227,6 +309,32 @@ table.rec .cS.ai{color:var(--ok)}
 .lb .idx{position:absolute;bottom:calc(22px + env(safe-area-inset-bottom));left:50%;
   transform:translateX(-50%);color:#fff;font-family:var(--mono);font-size:11px;letter-spacing:.16em;opacity:.65}
 
+/* ══ 冊子 ══ */
+#book{display:none}
+@media print{
+  @page{margin:16mm 14mm}
+  html,body{background:#fff!important;color:#000!important}
+  .top,.dock,.veil,.sheet,.lb,.toast,main.wrap{display:none!important}
+  #book{display:block!important}
+  #book *{color:#000!important}
+  .bk-cover{text-align:center;padding:64mm 0 0;page-break-after:always}
+  .bk-cover h1{font-family:var(--mincho);font-size:30pt;font-weight:600;letter-spacing:.14em;margin:0 0 10mm}
+  .bk-cover p{font-family:var(--mono);font-size:10pt;letter-spacing:.2em;margin:0 0 3mm}
+  .bk-mon{font-family:var(--mincho);font-size:13pt;font-weight:600;letter-spacing:.1em;
+    border-bottom:.4pt solid #000;padding-bottom:2mm;margin:10mm 0 6mm}
+  .bk-e{page-break-inside:avoid;margin:0 0 9mm}
+  .bk-h{display:flex;align-items:baseline;gap:4mm;margin-bottom:2.5mm}
+  .bk-h b{font-family:var(--mincho);font-size:14pt;font-weight:600}
+  .bk-h span{font-family:var(--mono);font-size:8pt;letter-spacing:.14em}
+  .bk-t{font-family:var(--mincho);font-size:12.5pt;font-weight:600;margin:0 0 1.5mm;line-height:1.5}
+  .bk-b{font-size:9.5pt;line-height:1.85;white-space:pre-wrap;margin:0}
+  .bk-p{display:grid;gap:1.5mm;margin-top:3mm}
+  .bk-p.p1{grid-template-columns:1fr}
+  .bk-p.p2,.bk-p.p4{grid-template-columns:1fr 1fr}
+  .bk-p.p3,.bk-p.p5,.bk-p.p6{grid-template-columns:repeat(3,1fr)}
+  .bk-p img{width:100%;height:100%;object-fit:cover;aspect-ratio:4/3;display:block}
+  .bk-p.p1 img{aspect-ratio:3/2}
+}
 .toast{position:fixed;left:50%;bottom:104px;transform:translate(-50%,12px);background:var(--ink);
   color:var(--bg);font-size:12.5px;padding:10px 18px;border-radius:13px;z-index:90;opacity:0;
   pointer-events:none;transition:.24s;max-width:86vw;text-align:center;box-shadow:var(--lift)}
@@ -238,7 +346,7 @@ table.rec .cS.ai{color:var(--ok)}
 <header class="top">
   <div class="top-in">
     <img class="mark" src="data:image/png;base64,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" alt="" aria-hidden="true">
-    <h1 class="brand">Memory OS</h1>
+    <h1 class="brand">Memory OS</h1><span class="ver" id="ver"></span>
     <div class="grow"></div>
     <button class="ico" id="themeBtn" aria-label="表示テーマを切り替える">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 010 18z" fill="currentColor" stroke="none" opacity=".5"/></svg>
@@ -251,7 +359,9 @@ table.rec .cS.ai{color:var(--ok)}
     <div class="seg" role="tablist">
       <button role="tab" data-view="table" aria-selected="true">一覧表</button>
       <button role="tab" data-view="timeline" aria-selected="false">タイムライン</button>
+      <button role="tab" data-view="calendar" aria-selected="false">カレンダー</button>
       <button role="tab" data-view="albums" aria-selected="false">アルバム</button>
+      <button role="tab" data-view="book" aria-selected="false">ノート</button>
     </div>
     <div class="grow"></div>
     <span class="count" id="count"></span>
@@ -312,6 +422,13 @@ table.rec .cS.ai{color:var(--ok)}
     <button class="b line" id="stPull">再読み込み</button>
     <button class="b solid" id="stSave">保存する</button>
   </div>
+  <hr style="border:none;border-top:1px solid var(--line);margin:26px 0 20px">
+  <p class="note" style="margin-bottom:14px">今 表示している範囲を、写真つきの冊子の体裁に組んで印刷します。
+    アルバムを開いてから実行すると、その旅行だけの一冊になります。</p>
+  <div class="act" style="justify-content:flex-start">
+    <button class="b line" id="printBtn">冊子として印刷する</button>
+  </div>
+  <p class="note" id="verNote" style="margin:22px 0 0;font-family:var(--mono);font-size:11px"></p>
 </section>
 
 <div class="lb" id="lb">
@@ -322,6 +439,8 @@ table.rec .cS.ai{color:var(--ok)}
   <span class="idx" id="lbIdx"></span>
 </div>
 
+<div id="book" hidden></div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -330,7 +449,7 @@ const LS={url:'mos.url',entries:'mos.entries',theme:'mos.theme'};
 const S={url:localStorage.getItem(LS.url)||'',
   entries:JSON.parse(localStorage.getItem(LS.entries)||'[]'),
   view:'table',query:'',album:null,editing:null,draft:[],staged:[],
-  sort:{k:'date',d:-1}};
+  sort:{k:'date',d:-1},cal:null,page:0};
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
@@ -393,6 +512,11 @@ function hydrate(scope=document){
 }
 
 const D=d=>new Date(d+'T00:00');
+function shiftMonth(ym,n){
+  const [y,m]=ym.split('-').map(Number);
+  const d=new Date(y,m-1+n,1);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+}
 const dayNum=d=>D(d).getDate();
 const monWd=d=>'日月火水木金土'[D(d).getDay()]+'曜';
 
@@ -501,6 +625,92 @@ function toCsv(){
   a.download='memory-os-'+new Date().toISOString().slice(0,10)+'.csv';
   a.click(); URL.revokeObjectURL(a.href);
 }
+/* ══ カレンダー ══ */
+const ymKey=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+function calendar(){
+  if(!S.cal){
+    const newest=[...S.entries].sort((a,b)=>b.date.localeCompare(a.date))[0];
+    S.cal=newest?newest.date.slice(0,7):new Date().toISOString().slice(0,7);
+  }
+  const [Y,M]=S.cal.split('-').map(Number);
+  const first=new Date(Y,M-1,1), lead=first.getDay(), days=new Date(Y,M,0).getDate();
+  const today=new Date().toISOString().slice(0,10);
+  const by={};
+  for(const e of S.entries.filter(e=>!S.album||e.album===S.album)) (by[e.date]||=[]).push(e);
+
+  let cells='';
+  for(let i=0;i<lead;i++) cells+='<div class="cell void"></div>';
+  for(let d=1;d<=days;d++){
+    const key=`${Y}-${String(M).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const es=by[key]||[], pic=es.flatMap(e=>e.photos||[])[0];
+    cells+=`<div class="cell ${es.length?'has':''} ${pic?'shot':''} ${key===today?'now':''}"
+      ${es.length?`data-day="${key}"`:''}>
+      ${pic?`<img data-pid="${pic}" alt="">`:''}
+      <b>${d}</b>
+      ${es.length&&!pic?`<span class="dot"></span>`:''}
+      ${es.length&&pic?`<span class="ttl">${esc(es[0].title||'')}</span>`:''}
+    </div>`;
+  }
+  const n=Object.keys(by).filter(k=>k.startsWith(S.cal)).length;
+  const total=Object.keys(by).filter(k=>k.startsWith(S.cal))
+    .reduce((a,k)=>a+by[k].length,0);
+  return `<div class="calbar">
+      <button id="cPrev" aria-label="前の月"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <h2>${Y}年${M}月</h2>
+      <button id="cNext" aria-label="次の月"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
+      <div class="grow"></div>
+      <button class="today" id="cNow">今月</button></div>
+    <div class="wk">${'日月火水木金土'.split('').map((w,i)=>`<span class="s${i}">${w}</span>`).join('')}</div>
+    <div class="cal">${cells}</div>
+    <div class="calsum">${total?`この月は ${n} 日 / ${total} 件`:'この月の記録はありません'}</div>`;
+}
+
+/* ══ ノート（めくり） ══ */
+function bookview(){
+  const list=[...visible()].sort((a,b)=>(b.date+b.id).localeCompare(a.date+a.id));
+  if(!list.length) return `<div class="blank"><b>めくるページがありません</b>
+    <span>記録を足すと、ここが一冊になります。</span></div>`;
+  S.page=Math.max(0,Math.min(S.page,list.length-1));
+  const e=list[S.page], ph=(e.photos||[]).slice(0,6);
+  return `<div class="bookstage"><article class="leaf" id="leaf">
+      <div class="lmon">${e.date.slice(0,4)} / ${e.date.slice(5,7)}${e.album?'　'+esc(e.album):''}</div>
+      <div class="lday"><b>${D(e.date).getDate()}</b>
+        <span>${'日月火水木金土'[D(e.date).getDay()]}曜${e.source==='ai'?'　AI':''}</span></div>
+      <h3>${esc(e.title)||'無題'}</h3>
+      ${e.body?`<p>${esc(e.body)}</p>`:''}
+      ${ph.length?`<div class="lpic q${ph.length}">`+ph.map((p,i)=>
+        `<div data-open="${e.id}" data-i="${i}"><img data-pid="${p}" alt=""></div>`).join('')+`</div>`:''}
+      <div class="lfoot"><span>${S.page+1} / ${list.length}</span>
+        <button data-edit="${e.id}">編集</button></div>
+    </article></div>
+    <div class="pager">
+      <button id="pPrev" ${S.page===0?'disabled':''} aria-label="前のページ">
+        <svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <span class="n">${S.page+1} / ${list.length}</span>
+      <button id="pNext" ${S.page>=list.length-1?'disabled':''} aria-label="次のページ">
+        <svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
+    </div>`;
+}
+let flipping=false;
+function flip(dir){
+  if(flipping) return;
+  const total=visible().length, next=S.page+dir;
+  if(next<0||next>=total) return;
+  const leaf=$('#leaf');
+  if(!leaf){ S.page=next; render(); return; }
+  flipping=true;
+  leaf.style.transformOrigin = dir>0 ? 'left center' : 'right center';
+  leaf.classList.add('turn-f');
+  setTimeout(()=>{
+    S.page=next; render();
+    const l=$('#leaf');
+    if(l){ l.style.transformOrigin = dir>0 ? 'right center' : 'left center';
+      l.classList.add('turn-b');
+      l.addEventListener('animationend',()=>l.classList.remove('turn-b'),{once:true}); }
+    flipping=false;
+  },300);
+}
+
 function render(){
   document.querySelectorAll('.seg button').forEach(b=>b.setAttribute('aria-selected',b.dataset.view===S.view));
   const inAlbum=!!S.album;
@@ -508,15 +718,22 @@ function render(){
     ? `<div style="display:flex;align-items:center;gap:11px;margin:2px 0 24px">
         <button class="b line" id="back">← 戻る</button>
         <span style="font-family:var(--mincho);font-size:18px;letter-spacing:.04em">${esc(S.album)}</span></div>`
-    : (S.view==='albums'?'':`<div class="searchbar">
+    : ((S.view==='albums'||S.view==='calendar')?'':`<div class="searchbar">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
         <input class="search" id="q" placeholder="タイトル・本文・旅行名で探す" value="${esc(S.query)}"></div>`);
   let body;
   if(S.view==='albums'&&!inAlbum) body=albums();
   else if(S.view==='table') body=table();
+  else if(S.view==='calendar') body=calendar();
+  else if(S.view==='book') body=bookview();
   else body=timeline();
   $('#main').innerHTML=head+body;
   $('#csv')?.addEventListener('click',toCsv);
+  $('#cPrev')?.addEventListener('click',()=>{S.cal=shiftMonth(S.cal,-1);render();});
+  $('#cNext')?.addEventListener('click',()=>{S.cal=shiftMonth(S.cal,1);render();});
+  $('#cNow')?.addEventListener('click',()=>{S.cal=new Date().toISOString().slice(0,7);render();});
+  $('#pPrev')?.addEventListener('click',()=>flip(-1));
+  $('#pNext')?.addEventListener('click',()=>flip(1));
   $('#main').querySelectorAll('th[data-sort]').forEach(th=>th.onclick=()=>{
     const k=th.dataset.sort;
     S.sort = S.sort.k===k ? {k,d:-S.sort.d} : {k,d:k==='date'?-1:1};
@@ -535,6 +752,14 @@ $('#main').addEventListener('click',ev=>{
   const al=ev.target.closest('[data-album]');
   if(al){S.album=al.dataset.album;S.view='timeline';render();scrollTo({top:0});return;}
   if(ev.target.id==='back'){S.album=null;S.view='albums';render();return;}
+  const day=ev.target.closest('[data-day]');
+  if(day){
+    const list=visible();
+    const i=[...list].sort((a,b)=>(b.date+b.id).localeCompare(a.date+a.id))
+      .findIndex(e=>e.date===day.dataset.day);
+    if(i>=0){S.page=i;S.view='book';render();scrollTo({top:0});}
+    return;
+  }
   const sh=ev.target.closest('[data-open]');
   if(sh) openLb(S.entries.find(e=>e.id===sh.dataset.open),+sh.dataset.i);
 });
@@ -686,10 +911,74 @@ $('#lbP').onclick=()=>{ix=(ix-1+set.length)%set.length;draw();};
 $('#lbN').onclick=()=>{ix=(ix+1)%set.length;draw();};
 addEventListener('keydown',ev=>{
   if(ev.key==='Escape'){$('#lb').classList.contains('on')?$('#lb').classList.remove('on'):closeAll();}
-  if(!$('#lb').classList.contains('on'))return;
+  if(!$('#lb').classList.contains('on')){
+    if(document.querySelector('.sheet.on'))return;
+    if(S.view==='book'){
+      if(ev.key==='ArrowLeft')flip(-1);
+      if(ev.key==='ArrowRight')flip(1);
+    }
+    if(S.view==='calendar'){
+      if(ev.key==='ArrowLeft')$('#cPrev')?.click();
+      if(ev.key==='ArrowRight')$('#cNext')?.click();
+    }
+    return;
+  }
   if(ev.key==='ArrowLeft')$('#lbP').click();
   if(ev.key==='ArrowRight')$('#lbN').click();
 });
+
+/* ══ version ══ */
+const APP_VER='1.4.0';
+$('#ver').textContent='v'+APP_VER;
+$('#verNote').textContent='Memory OS  v'+APP_VER;
+
+/* ══ 冊子 ══ */
+$('#printBtn').onclick=async()=>{
+  const list=[...visible()].sort((a,b)=>(a.date+a.id).localeCompare(b.date+b.id));
+  if(!list.length) return toast('印刷できる記録がありません');
+  const btn=$('#printBtn'); btn.disabled=true;
+  const ids=[...new Set(list.flatMap(e=>e.photos||[]))];
+  toast(ids.length?`写真 ${ids.length} 枚を読み込んでいます`:'組版しています');
+  const pics={};
+  for(const id of ids){ try{ pics[id]=await photoUrl(id); }catch{} }
+
+  const title=S.album||'Memory OS';
+  const span=list.length>1
+    ? list[0].date.replace(/-/g,'.')+' — '+list[list.length-1].date.replace(/-/g,'.')
+    : list[0].date.replace(/-/g,'.');
+  let h=`<div class="bk-cover"><h1>${esc(title)}</h1>
+    <p>${span}</p><p>${list.length} 件の記録</p></div>`;
+  let ym=null;
+  for(const e of list){
+    const k=e.date.slice(0,7);
+    if(k!==ym){ym=k;h+=`<div class="bk-mon">${k.slice(0,4)}年${+k.slice(5,7)}月</div>`;}
+    const ph=(e.photos||[]).filter(p=>pics[p]).slice(0,6);
+    h+=`<div class="bk-e">
+      <div class="bk-h"><b>${D(e.date).getDate()}</b>
+        <span>${'日月火水木金土'[D(e.date).getDay()]}曜${e.album&&!S.album?'　'+esc(e.album):''}</span></div>
+      <p class="bk-t">${esc(e.title)||'無題'}</p>
+      ${e.body?`<p class="bk-b">${esc(e.body)}</p>`:''}
+      ${ph.length?`<div class="bk-p p${ph.length}">`+ph.map(p=>`<img src="${pics[p]}" alt="">`).join('')+`</div>`:''}
+    </div>`;
+  }
+  const bk=$('#book'); bk.innerHTML=h; bk.hidden=false;
+  closeAll();
+  setTimeout(()=>{ window.print(); btn.disabled=false; }, 350);
+};
+addEventListener('afterprint',()=>{ $('#book').innerHTML=''; $('#book').hidden=true; });
+
+/* ページを指でめくる */
+let tX=null,tY=null;
+$('#main').addEventListener('touchstart',ev=>{
+  if(S.view!=='book')return;
+  tX=ev.touches[0].clientX; tY=ev.touches[0].clientY;
+},{passive:true});
+$('#main').addEventListener('touchend',ev=>{
+  if(S.view!=='book'||tX===null)return;
+  const dx=ev.changedTouches[0].clientX-tX, dy=ev.changedTouches[0].clientY-tY;
+  tX=null;
+  if(Math.abs(dx)>56&&Math.abs(dx)>Math.abs(dy)*1.6) flip(dx<0?1:-1);
+},{passive:true});
 
 function measure(){
   const h=document.querySelector('.top').offsetHeight;
