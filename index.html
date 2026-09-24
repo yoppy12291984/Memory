@@ -484,6 +484,47 @@ table.rec .cS.ai{color:var(--ok)}
 
 <script type="text/plain" id="suite-original-app">
 'use strict';
+// 表示設定だけを端末に保存。業務データと同期設定は変更しない。
+function createTabPreferences(cfg){
+ const key='app-tab-preferences-v1:'+cfg.app;
+ let prefs={};try{prefs=JSON.parse(localStorage.getItem(key)||'{}')||{};}catch(_){}
+ if(!prefs.hidden||!Array.isArray(prefs.hidden))prefs.hidden=[];
+ const ids=cfg.tabs.map(t=>t.id);
+ const visible=()=>ids.filter(id=>!prefs.hidden.includes(id));
+ if(!visible().length)prefs.hidden=[];
+ const initial=()=>visible().includes(prefs.start)?prefs.start:visible().includes(cfg.default)?cfg.default:visible()[0];
+ const section=document.createElement('section');section.id='app-tab-preferences';section.style.cssText='margin:20px 0;padding:16px 0;border-top:1px solid var(--line,#ccdcd5)';
+ const el=(tag,value)=>{const e=document.createElement(tag);if(value)e.textContent=value;return e;};
+ function persist(){try{localStorage.setItem(key,JSON.stringify(prefs));return true;}catch(_){return false;}}
+ function apply(){cfg.tabs.forEach(t=>{const b=document.querySelector(t.selector);if(b)b.style.display=visible().includes(t.id)?'':'none';});}
+ function render(){
+  section.replaceChildren(el('h3','タブと起動時の画面'));
+  const note=el('p','表示と起動先は、この端末に自動保存されます。非表示にしても記録は残ります。');note.style.cssText='font-size:13px;line-height:1.7';section.append(note);
+  const status=el('p');status.setAttribute('role','status');
+  cfg.tabs.forEach(t=>{
+   const label=el('label');label.style.cssText='display:flex;align-items:center;gap:10px;margin:10px 0;cursor:pointer';
+   const check=el('input');check.type='checkbox';check.checked=visible().includes(t.id);check.disabled=check.checked&&visible().length===1;check.style.cssText='width:18px;height:18px';
+   const name=document.querySelector(t.selector)?.textContent.trim()||t.label;
+   label.append(check,document.createTextNode(name));section.append(label);
+   check.onchange=()=>{const before=JSON.stringify(prefs);if(!check.checked&&visible().length===1){check.checked=true;return;}
+    prefs.hidden=prefs.hidden.filter(id=>id!==t.id);if(!check.checked)prefs.hidden.push(t.id);prefs.start=initial();
+    if(!persist()){prefs=JSON.parse(before);check.checked=!check.checked;status.textContent='保存できませんでした。端末の空き容量などをご確認ください。';return;}
+    apply();if(ids.includes(cfg.current())&&!visible().includes(cfg.current()))cfg.go(initial());render();
+   };
+  });
+  const label=el('label','起動時の画面');label.htmlFor='app-startup-tab';label.style.display='block';
+  const select=el('select');select.id='app-startup-tab';select.style.cssText='font:inherit;padding:8px;max-width:100%;background:transparent;color:inherit;border:1px solid var(--line,#ccdcd5);border-radius:8px';
+  cfg.tabs.filter(t=>visible().includes(t.id)).forEach(t=>{const o=el('option',document.querySelector(t.selector)?.textContent.trim()||t.label);o.value=t.id;select.append(o);});select.value=initial();
+  select.onchange=()=>{const before=prefs.start;prefs.start=select.value;if(!persist()){prefs.start=before;select.value=initial();status.textContent='保存できませんでした。';}};
+  section.append(label,select,status);
+ }
+ function mount(refresh){const host=document.querySelector(cfg.host);if(host&&section.parentElement!==host){host.append(section);render();}else if(refresh&&host)render();}
+ function boot(){apply();cfg.go(initial());mount();new MutationObserver(()=>mount(false)).observe(document.body,{childList:true,subtree:true});}
+ return {visible,initial,apply,mount,boot};
+}
+
+const appTabPrefs=createTabPreferences({app:"Memory",tabs:[{"id":"table","selector":".seg [data-view=\"table\"]","label":"table"},{"id":"timeline","selector":".seg [data-view=\"timeline\"]","label":"timeline"},{"id":"calendar","selector":".seg [data-view=\"calendar\"]","label":"calendar"},{"id":"albums","selector":".seg [data-view=\"albums\"]","label":"albums"},{"id":"book","selector":".seg [data-view=\"book\"]","label":"book"}],host:"#setupSheet",default:"table",current(){return S.view;},go(id){S.view=id;S.album=null;render();}});
+
 const LS={url:'mos.url',entries:'mos.entries',theme:'mos.theme'};
 const S={url:localStorage.getItem(LS.url)||'',
   entries:JSON.parse(localStorage.getItem(LS.entries)||'[]'),
@@ -1005,7 +1046,7 @@ async function doImport(){
   finally{$('#imGo').disabled=false;}
 }
 
-$('#setupBtn').onclick=()=>{$('#fUrl').value=S.url;open($('#setupSheet'));};
+$('#setupBtn').onclick=()=>{appTabPrefs.mount(true);$('#fUrl').value=S.url;open($('#setupSheet'));};
 $('#stSave').onclick=async()=>{S.url=$('#fUrl').value.trim();
   localStorage.setItem(LS.url,S.url);closeAll();await pull();};
 $('#stPull').onclick=()=>pull();
@@ -1043,7 +1084,7 @@ addEventListener('keydown',ev=>{
 });
 
 /* ══ version ══ */
-const APP_VER='1.7.0';
+const APP_VER='1.7.1';
 $('#ver').textContent='v'+APP_VER;
 $('#verNote').textContent='Memory OS  v'+APP_VER;
 
@@ -1104,6 +1145,7 @@ function measure(){
 measure(); addEventListener('resize', measure); addEventListener('orientationchange', measure);
 
 render();
+appTabPrefs.boot();
 if(S.url)pull(); else open($('#setupSheet'));
 </script>
 <script>window.SuiteDeviceConfig={app:"Memory",name:"Memory OS",settingsTarget:"#setupSheet",url:"https://script.google.com/macros/s/AKfycbwh016Q6NrLXgRoIdz3jTF1xn64Qx9NgBA7E7waK8aKAcgalLTeaW7hj__ZzfCXVHZn2w/exec",readUrl(){return localStorage.getItem("mos.url");},ensureUrl(url){if(!localStorage.getItem("mos.url"))localStorage.setItem("mos.url",url);}};
