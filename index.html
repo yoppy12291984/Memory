@@ -154,6 +154,26 @@ table.rec .cS.ai{color:var(--ok)}
   font-family:var(--mono);letter-spacing:.06em}
 .tblfoot button{color:var(--sub);text-decoration:underline;text-underline-offset:3px}
 .tblfoot button:hover{color:var(--ink)}
+.list-options{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 20px;flex-wrap:wrap}
+.list-options .seg button{min-height:44px;padding:7px 14px}
+.list-options button[aria-pressed="true"]{background:var(--paper);color:var(--ink);box-shadow:0 1px 3px #0001}
+.list-order{font-size:12px;color:var(--sub);min-height:44px;padding:6px}
+.day-card{background:var(--paper);border:1px solid var(--hair);border-radius:16px;margin-bottom:18px;padding:18px 20px;min-width:0}
+.day-heading{display:flex;align-items:baseline;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.day-heading h2{font-family:var(--mincho);font-size:20px;line-height:1.5;font-weight:600;margin:0}
+.day-year,.day-count{font-size:11px;color:var(--sub);font-family:var(--mono)}
+.day-count{margin-left:auto}
+.day-album{font-size:12px;color:var(--accent);overflow-wrap:anywhere;margin:10px 0 5px}
+.memory-detail{border-top:1px solid var(--hair)}
+.memory-detail summary{display:flex;align-items:baseline;gap:10px;list-style:none;cursor:pointer;padding:13px 0;font-family:var(--mincho);font-size:16px;line-height:1.65;overflow-wrap:anywhere}
+.memory-detail summary::-webkit-details-marker{display:none}
+.memory-detail summary::after{content:'＋';font-family:var(--sans);font-size:14px;color:var(--sub);margin-left:auto;flex:none}
+.memory-detail[open] summary::after{content:'−'}
+.memory-body p{white-space:pre-wrap;overflow-wrap:anywhere;margin:0 0 16px;font-size:14px;line-height:1.9}
+.memory-body .shots{border-radius:10px;overflow:hidden;margin-bottom:12px}
+.memory-body .tools{padding:10px 0 14px;flex-wrap:wrap}
+.mobile-records{display:none}
+@media(max-width:600px){.desktop-records{display:none}.mobile-records{display:block}.day-card{padding:16px}.wrap{padding-left:16px;padding-right:16px}.searchbar{margin-bottom:18px}.search{font-size:16px}}
 /* ══ カレンダー ══ */
 .calbar{display:flex;align-items:center;gap:14px;margin:2px 0 20px}
 .calbar h2{font-family:var(--mincho);font-size:21px;font-weight:600;margin:0;letter-spacing:.06em;
@@ -383,7 +403,7 @@ table.rec .cS.ai{color:var(--ok)}
   </div>
   <div class="segwrap">
     <div class="seg" role="tablist">
-      <button role="tab" data-view="table" aria-selected="true">一覧表</button>
+      <button role="tab" data-view="table" aria-selected="true">一覧</button>
       <button role="tab" data-view="timeline" aria-selected="false">タイムライン</button>
       <button role="tab" data-view="calendar" aria-selected="false">カレンダー</button>
       <button role="tab" data-view="albums" aria-selected="false">アルバム</button>
@@ -529,6 +549,7 @@ const LS={url:'mos.url',entries:'mos.entries',theme:'mos.theme'};
 const S={url:localStorage.getItem(LS.url)||'',
   entries:JSON.parse(localStorage.getItem(LS.entries)||'[]'),
   view:'table',query:'',album:null,editing:null,draft:[],staged:[],
+  listMode:localStorage.getItem('mos.listMode')==='records'?'records':'days',dayOrder:-1,
   sort:{k:'date',d:-1},cal:null,page:0,onlyStar:true};
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -631,7 +652,7 @@ function shots(e){
 function timeline(){
   const list=visible();
   if(!S.entries.length) return `<div class="blank"><b>最初の一日を残す</b>
-    <span>下の「書く」から自分で書くか、AI に話した内容を取り込めます。</span></div>`;
+    <span>上の「書く」から自分で書くか、AI に話した内容を取り込めます。</span></div>`;
   if(!list.length) return `<div class="blank"><b>見つかりません</b><span>条件に合う記録がありませんでした。</span></div>`;
   let h='',ym=null;
   const per={};
@@ -689,10 +710,29 @@ function sortRows(list){
     return (b.date+b.id).localeCompare(a.date+a.id);
   });
 }
+function recordDetail(e){
+  return `<details class="memory-detail"><summary>${e.star?'☆ ':''}${esc(e.title)||'無題'}</summary>
+    <div class="memory-body">${e.body?`<p>${esc(e.body)}</p>`:''}${shots(e)}
+      <div class="tools">${starBtn(e)}<button data-edit="${esc(e.id)}">編集・写真を追加</button>${e.photos?.length?`<span>${e.photos.length} 枚</span>`:''}</div>
+    </div></details>`;
+}
+function dateHeading(date,count){
+  const d=D(date);
+  return `<div class="day-heading"><h2>${d.getMonth()+1}月${d.getDate()}日（${'日月火水木金土'[d.getDay()]}）</h2><span class="day-year">${d.getFullYear()}</span>${count?`<span class="day-count">${count}件</span>`:''}</div>`;
+}
+function groupedDays(list){
+  const days=new Map();
+  for(const e of list){if(!days.has(e.date))days.set(e.date,[]);days.get(e.date).push(e);}
+  return [...days].sort((a,b)=>a[0].localeCompare(b[0])*S.dayOrder).map(([date,entries])=>{
+    const albums=new Map();
+    for(const e of entries){const album=e.album||'';if(!albums.has(album))albums.set(album,[]);albums.get(album).push(e);}
+    return `<section class="day-card">${dateHeading(date,entries.length)}${[...albums].map(([album,items])=>`<div class="day-album">${esc(album)||'日常'}</div>${items.map(recordDetail).join('')}`).join('')}</section>`;
+  }).join('');
+}
 function table(){
   const list=sortRows(visible());
   if(!S.entries.length) return `<div class="blank"><b>まだ記録がありません</b>
-    <span>下の「書く」から始めてください。</span></div>`;
+    <span>上の「書く」から始めてください。</span></div>`;
   if(!list.length) return `<div class="blank"><b>見つかりません</b><span>条件に合う記録がありませんでした。</span></div>`;
   const head=COLS.map(c=>{
     const on=S.sort.k===c.k;
@@ -705,9 +745,11 @@ function table(){
     <td class="cA">${esc(e.album)||'<span style="color:var(--faint)">—</span>'}</td>
     <td class="cN">${(e.photos||[]).length||'—'}</td>
     <td class="cS ${e.source==='ai'?'ai':''}">${e.source==='ai'?'AI':'自分'}</td></tr>`).join('');
-  return `<div class="tblwrap"><table class="rec">
+  const options=`<div class="list-options"><div class="seg" role="group" aria-label="一覧のまとめ方"><button data-list-mode="days" aria-pressed="${S.listMode==='days'}">日付ごと</button><button data-list-mode="records" aria-pressed="${S.listMode==='records'}">記録ごと</button></div>${S.listMode==='days'?`<button class="list-order" data-day-order>${S.dayOrder===-1?'新しい日から ↓':'古い日から ↑'}</button>`:''}</div>`;
+  const content=S.listMode==='days'?groupedDays(visible()):`<div class="desktop-records tblwrap"><table class="rec">
     <thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>
-    <div class="tblfoot"><span>${list.length} 件</span>
+    <div class="mobile-records">${list.map(e=>`<article class="day-card">${dateHeading(e.date)}<div class="day-album">${esc(e.album)||'日常'}</div>${recordDetail(e)}</article>`).join('')}</div>`;
+  return options+content+`<div class="tblfoot"><span>${new Set(list.map(e=>e.date)).size}日分 · ${list.length} 件</span>
       <button id="csv">CSV で書き出す</button></div>`;
 }
 function toCsv(){
@@ -863,6 +905,9 @@ function render(){
     .map(a=>`<option value="${esc(a)}">`).join('');
 }
 $('#main').addEventListener('click',ev=>{
+  const mode=ev.target.closest('[data-list-mode]');
+  if(mode){S.listMode=mode.dataset.listMode;try{localStorage.setItem('mos.listMode',S.listMode);}catch(_){}render();return;}
+  if(ev.target.closest('[data-day-order]')){S.dayOrder*=-1;render();return;}
   const st=ev.target.closest('[data-star]');
   if(st){ ev.stopPropagation(); return toggleStar(st.dataset.star); }
   const only=ev.target.closest('[data-only]');
@@ -1084,7 +1129,7 @@ addEventListener('keydown',ev=>{
 });
 
 /* ══ version ══ */
-const APP_VER='1.7.2';
+const APP_VER='1.8.0';
 $('#ver').textContent='v'+APP_VER;
 $('#verNote').textContent='Memory OS  v'+APP_VER;
 
